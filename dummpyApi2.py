@@ -8,9 +8,8 @@ import time
 # 🔥 FIREBASE INITIALIZATION
 # -----------------------------
 try:
-    cred = credentials.Certificate(
-        r"C:\Users\aman2\Desktop\F\git_test\config\firebase.json"
-    )
+    cred_path = os.path.join(os.path.dirname(__file__), "firebase.json")
+    cred = credentials.Certificate(cred_path)
     firebase_admin.initialize_app(
         cred,
         {"databaseURL": "https://myproject-b3962-default-rtdb.firebaseio.com/"}
