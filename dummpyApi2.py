@@ -8,7 +8,7 @@ import time
 # 🔥 FIREBASE INITIALIZATION
 # -----------------------------
 try:
-    cred_path = os.path.join(os.path.dirname(__file__), "firebase.json")
+    cred_path = os.path.join("/etc/secrets/", "firebase.json")
     cred = credentials.Certificate(cred_path)
     firebase_admin.initialize_app(
         cred,
