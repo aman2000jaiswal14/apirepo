@@ -765,23 +765,37 @@ def delete_group():
             return safe_json_response("error", "groupId missing", 400)
 
         group_ref = db.reference(f"groups/{groupId}")
-        group = group_ref.get()
-        if not group:
+        group_data = group_ref.get()
+        if not group_data:
             return safe_json_response("error", "Group not found", 404)
 
-        # Remove references from users
-        for userId in group.get("groupMembers", []):
-            user_ref = db.reference(f"users/{userId}")
-            user = user_ref.get()
-            if user and "groupIds" in user and groupId in user["groupIds"]:
-                user["groupIds"].remove(groupId)
-                user_ref.update({"groupIds": user["groupIds"]})
+        # --- FIX 1: Cleanup actual Items (Expenses) ---
+        # Don't leave orphan items in the /items node
+        group_items = group_data.get("groupItems", [])
+        if group_items:
+            for itemId in group_items:
+                db.reference(f"items/{itemId}").delete()
 
+        # --- FIX 2: Cleanup User References ---
+        members = group_data.get("groupMembers", [])
+        for userId in members:
+            user_ref = db.reference(f"users/{userId}")
+            user_data = user_ref.get()
+            if user_data:
+                user_groups = user_data.get("groupIds", [])
+                if groupId in user_groups:
+                    # Remove the group from user's list
+                    user_groups.remove(groupId)
+                    # Update only the groupIds field
+                    user_ref.update({"groupIds": user_groups})
+
+        # --- Step 3: Delete the group itself ---
         group_ref.delete()
-        return safe_json_response("success", "Group deleted")
+
+        return safe_json_response("success", "Group and all related items deleted successfully")
+
     except Exception:
         return safe_json_response("error", "Failed to delete group", traceback.format_exc(), 500)
-
 # -----------------------------
 # 🔥 SERVER RUN
 # -----------------------------
